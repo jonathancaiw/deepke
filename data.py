@@ -16,8 +16,7 @@ def load_xlsx(filename, pt_filename=None, columns=None):
     """
     加载原始数据并缓存
     """
-    pt_filename = DATA_PATH + pt_filename
-    pt_filename += MODEL_FILE_SUFFIX
+    pt_filename = DATA_PATH + pt_filename + MODEL_FILE_SUFFIX
 
     if USER_CACHE and os.path.exists(pt_filename):
         dataset = torch.load(pt_filename)
@@ -51,7 +50,7 @@ def generate_label(filename):
         owner = owner_list[index]
         agent = agent_list[index]
         vendor = vendor_list[index]
-        money = money_list[index]
+        # money = money_list[index]
 
         if text is None:
             continue
@@ -96,6 +95,7 @@ def generate_label(filename):
                 data['head_offset'] = owner_offset
                 data['tail'] = vendor
                 data['tail_offset'] = vendor_offset
+                csv.append(data)
             else:
                 write_log('#%d owner vendor has multiple values' % index)
         else:
@@ -116,6 +116,7 @@ def generate_label(filename):
                 data['head_offset'] = agent_offset
                 data['tail'] = vendor
                 data['tail_offset'] = vendor_offset
+                csv.append(data)
             else:
                 write_log('#%d agent vendor has multiple values' % index)
         else:
