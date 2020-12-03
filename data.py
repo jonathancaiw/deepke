@@ -1,5 +1,7 @@
+import csv
 from datetime import datetime
 import os
+import random
 import torch
 from tqdm import tqdm
 from global_util import *
@@ -31,11 +33,33 @@ def is_not_none(a, b):
     return a is not None and b is not None
 
 
-def generate_label(filename):
-    pt_filename = 'label'
-    columns = {'信息ID': 'id', '纯文本正文': 'text', '中标商': 'vendor', '中标金额': 'money', '代理机构': 'agent', '业主': 'owner', 'html正文': 'html'}
+def add_label(labels, text, index, head, tail, head_tail, tail_head):
+    if is_not_none(head, tail):
+        head = head.strip()
+        tail = tail.strip()
 
-    dataset = load_xlsx(filename, pt_filename, columns)
+        if text.count(head) == 1 and text.count(tail) == 1:
+            head_offset = text.find(head)
+            tail_offset = text.find(tail)
+
+            label = {}
+            label['sentence'] = text
+            label['relation'] = head_tail if head_offset < tail_offset else tail_head
+            label['head'] = head
+            label['head_offset'] = head_offset
+            label['tail'] = tail
+            label['tail_offset'] = tail_offset
+            labels.append(label)
+        else:
+            write_log('#%d %s has multiple values' % (index, head_tail))
+    else:
+        write_log('#%d %s has None value' % (index, head_tail))
+
+
+def generate_labels(dataset, filename):
+    labels_filename = filename + '_label.pt'
+    if USER_CACHE and os.path.exists(labels_filename):
+        return torch.load(labels_filename)
 
     text_list = dataset[CONTENT]
     owner_list = dataset['owner']
@@ -43,7 +67,7 @@ def generate_label(filename):
     vendor_list = dataset['vendor']
     money_list = dataset['money']
 
-    csv = []
+    labels = []
 
     for index in tqdm(range(len(text_list))):
         text = text_list[index]
@@ -60,69 +84,41 @@ def generate_label(filename):
                 continue
 
         # 业主-代理、代理-业主
-        if is_not_none(owner, agent):
-            owner = owner.strip()
-            agent = agent.strip()
-            if text.count(owner) == 1 and text.count(agent) == 1:
-                owner_offset = text.find(owner)
-                agent_offset = text.find(agent)
-
-                data = {}
-                data['sentence'] = text
-                data['relation'] = '业主-代理' if owner_offset < agent_offset else '代理-业主'
-                data['head'] = owner
-                data['head_offset'] = owner_offset
-                data['tail'] = agent
-                data['tail_offset'] = agent_offset
-                csv.append(data)
-            else:
-                write_log('#%d owner agent has multiple values' % index)
-        else:
-            write_log('#%d owner agent has None value' % index)
+        add_label(labels, text, index, owner, agent, '业主-代理', '代理-业主')
 
         # 业主-供应商、供应商-业主
-        if is_not_none(owner, vendor):
-            owner = owner.strip()
-            vendor = vendor.strip()
-            if text.count(owner) == 1 and text.count(vendor) == 1:
-                owner_offset = text.find(owner)
-                vendor_offset = text.find(vendor)
-
-                data = {}
-                data['sentence'] = text
-                data['relation'] = '业主-供应商' if owner_offset < vendor_offset else '供应商-业主'
-                data['head'] = owner
-                data['head_offset'] = owner_offset
-                data['tail'] = vendor
-                data['tail_offset'] = vendor_offset
-                csv.append(data)
-            else:
-                write_log('#%d owner vendor has multiple values' % index)
-        else:
-            write_log('#%d owner vendor has None value' % index)
+        add_label(labels, text, index, owner, vendor, '业主-供应商', '供应商-业主')
 
         # 代理-供应商、供应商-代理
-        if is_not_none(agent, vendor):
-            agent = agent.strip()
-            vendor = vendor.strip()
-            if text.count(agent) == 1 and text.count(vendor) == 1:
-                agent_offset = text.find(agent)
-                vendor_offset = text.find(vendor)
+        add_label(labels, text, index, agent, vendor, '代理-供应商', '供应商-代理')
 
-                data = {}
-                data['sentence'] = text
-                data['relation'] = '代理-供应商' if agent_offset < vendor_offset else '供应商-代理'
-                data['head'] = agent
-                data['head_offset'] = agent_offset
-                data['tail'] = vendor
-                data['tail_offset'] = vendor_offset
-                csv.append(data)
-            else:
-                write_log('#%d agent vendor has multiple values' % index)
-        else:
-            write_log('#%d agent vendor has None value' % index)
+    torch.save(labels, labels_filename)
+
+    return labels
+
+
+def save_csv(csv_data, filename):
+    columns = ['sentence', 'relation', 'head', 'head_offset', 'tail', 'tail_offset']
+
+    with open(filename, 'w') as file:
+        csv_file = csv.writer(file)
+        csv_file.writerow(columns)
+        for data in csv_data:
+            row = [data['sentence'], data['relation'], data['head'], data['head_offset'], data['tail'], data['tail_offset']]
+            csv_file.writerow(row)
 
     print('dev')
+
+
+def generate_label(filename):
+    pt_filename = 'label'
+    columns = {'信息ID': 'id', '纯文本正文': 'text', '中标商': 'vendor', '中标金额': 'money', '代理机构': 'agent', '业主': 'owner', 'html正文': 'html'}
+
+    dataset = load_xlsx(filename, pt_filename, columns)
+
+    labels = generate_labels(dataset, pt_filename)
+
+    random.shuffle(labels)
 
 
 if __name__ == '__main__':
