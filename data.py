@@ -12,6 +12,10 @@ MODEL_FILE_SUFFIX = '.pt'
 CONTENT = 'text'
 MIN_LEN = 1
 MAX_LEN = 99999
+TRAIN_SIZE = 9
+TEST_SIZE = 0.05
+DEV_SIZE = 0.05
+random.seed(1)
 
 
 def load_xlsx(filename, pt_filename=None, columns=None):
@@ -44,11 +48,20 @@ def add_label(labels, text, index, head, tail, head_tail, tail_head):
 
             label = {}
             label['sentence'] = text
-            label['relation'] = head_tail if head_offset < tail_offset else tail_head
+            label['relation'] = head_tail
             label['head'] = head
             label['head_offset'] = head_offset
             label['tail'] = tail
             label['tail_offset'] = tail_offset
+            labels.append(label)
+
+            label = {}
+            label['sentence'] = text
+            label['relation'] = tail_head
+            label['head'] = tail
+            label['head_offset'] = tail_offset
+            label['tail'] = head
+            label['tail_offset'] = head_offset
             labels.append(label)
         else:
             write_log('#%d %s has multiple values' % (index, head_tail))
@@ -57,7 +70,7 @@ def add_label(labels, text, index, head, tail, head_tail, tail_head):
 
 
 def generate_labels(dataset, filename):
-    labels_filename = filename + '_label.pt'
+    labels_filename = DATA_PATH + filename + '_label.pt'
     if USER_CACHE and os.path.exists(labels_filename):
         return torch.load(labels_filename)
 
@@ -97,14 +110,29 @@ def generate_labels(dataset, filename):
     return labels
 
 
-def save_csv(csv_data, filename):
+def spllit_labels(labels):
+    random.shuffle(labels)
+
+    size = len(labels)
+
+    train_size = int(size * TRAIN_SIZE / (TRAIN_SIZE + DEV_SIZE + TEST_SIZE))
+    dev_size = int(size * DEV_SIZE / (TRAIN_SIZE + DEV_SIZE + TEST_SIZE))
+
+    train_labels = labels[:train_size]
+    dev_labels = labels[train_size:train_size + dev_size]
+    test_labels = labels[train_size + dev_size:]
+
+    return train_labels, dev_labels, test_labels
+
+
+def save_csv(labels, filename):
     columns = ['sentence', 'relation', 'head', 'head_offset', 'tail', 'tail_offset']
 
-    with open(filename, 'w') as file:
+    with open(DATA_PATH + filename, 'w') as file:
         csv_file = csv.writer(file)
         csv_file.writerow(columns)
-        for data in csv_data:
-            row = [data['sentence'], data['relation'], data['head'], data['head_offset'], data['tail'], data['tail_offset']]
+        for label in labels:
+            row = [label['sentence'], label['relation'], label['head'], label['head_offset'], label['tail'], label['tail_offset']]
             csv_file.writerow(row)
 
     print('dev')
@@ -118,7 +146,11 @@ def generate_label(filename):
 
     labels = generate_labels(dataset, pt_filename)
 
-    random.shuffle(labels)
+    train_labels, dev_labels, test_labels = spllit_labels(labels)
+
+    save_csv(train_labels, 'train.csv')
+    save_csv(dev_labels, 'dev.csv')
+    save_csv(test_labels, 'test.csv')
 
 
 if __name__ == '__main__':

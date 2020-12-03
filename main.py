@@ -117,7 +117,7 @@ def main(cfg):
             plt.plot(valid_losses, '+-')
             plt.legend(['train', 'valid'])
             plt.title('train/valid comparison loss')
-            plt.show()
+            # plt.show()
 
         if cfg.plot_utils == 'tensorboard':
             for i in range(len(train_losses)):
