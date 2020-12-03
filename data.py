@@ -11,7 +11,7 @@ USER_CACHE = True
 MODEL_FILE_SUFFIX = '.pt'
 CONTENT = 'text'
 MIN_LEN = 1
-MAX_LEN = 99999
+MAX_LEN = 1000
 TRAIN_SIZE = 9
 TEST_SIZE = 0.05
 DEV_SIZE = 0.05
@@ -135,8 +135,6 @@ def save_csv(labels, filename):
             row = [label['sentence'], label['relation'], label['head'], label['head_offset'], label['tail'], label['tail_offset']]
             csv_file.writerow(row)
 
-    print('dev')
-
 
 def generate_label(filename):
     pt_filename = 'label'
@@ -156,10 +154,6 @@ def generate_label(filename):
 if __name__ == '__main__':
     start_time = datetime.now()
     write_log('start label generating ...')
-
-    # generate_org_label()
-
-    # merge('label/cops_names_bidnotice.NER', 'label/cops_names_bidresult.NER')
 
     filename = '/Users/caiwei/Documents/Document/招标网/事件抽取/阿里标记数据-01捷风.xlsx'
     generate_label(filename)
