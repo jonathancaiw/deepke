@@ -45,7 +45,8 @@ def train(epoch, model, dataloader, optimizer, criterion, device, writer, cfg):
         if cfg.plot_utils == 'matplot':
             plt.plot(losses)
             plt.title(f'epoch {epoch} train loss')
-            plt.show()
+            # plt.show()
+            plt.pause(1)
 
         if cfg.plot_utils == 'tensorboard':
             for i in range(len(losses)):
