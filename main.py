@@ -17,6 +17,8 @@ from utils import manual_seed, load_pkl
 
 logger = logging.getLogger(__name__)
 
+plt.ion()
+
 
 @hydra.main(config_path='conf/config.yaml')
 def main(cfg):
@@ -117,6 +119,7 @@ def main(cfg):
             plt.plot(valid_losses, '+-')
             plt.legend(['train', 'valid'])
             plt.title('train/valid comparison loss')
+            plt.pause(0.001)
             # plt.show()
 
         if cfg.plot_utils == 'tensorboard':
