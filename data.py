@@ -46,7 +46,19 @@ def add_label(labels, text, index, head, tail, head_tail, tail_head):
             write_log('#%d %s has same value' % (index, head_tail))
             return
 
-        if text.count(head) == 1 and text.count(tail) == 1:
+        contain_check = False
+        if head.find(tail) > -1:
+            if text.count(head) == 1 and text.count(tail) == 2:
+                contain_check = True
+            else:
+                return
+        elif tail.find(head) > -1:
+            if text.count(head) == 2 and text.count(tail) == 1:
+                contain_check = True
+            else:
+                return
+
+        if contain_check or (text.count(head) == 1 and text.count(tail) == 1):
             head_offset = text.find(head)
             tail_offset = text.find(tail)
 
