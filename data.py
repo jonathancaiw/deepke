@@ -42,6 +42,10 @@ def add_label(labels, text, index, head, tail, head_tail, tail_head):
         head = head.strip()
         tail = tail.strip()
 
+        if head == tail:
+            write_log('#%d %s has same value' % (index, head_tail))
+            return
+
         if text.count(head) == 1 and text.count(tail) == 1:
             head_offset = text.find(head)
             tail_offset = text.find(tail)
@@ -147,7 +151,7 @@ def generate_label(filename):
     train_labels, dev_labels, test_labels = spllit_labels(labels)
 
     save_csv(train_labels, 'train.csv')
-    save_csv(dev_labels, 'dev.csv')
+    save_csv(dev_labels, 'valid.csv')
     save_csv(test_labels, 'test.csv')
 
 
