@@ -6,6 +6,7 @@ from transformers import BertTokenizer
 from serializer import Serializer
 from vocab import Vocab
 from utils import save_pkl, load_csv
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ def _add_pos_seq(train_data: List[Dict], cfg):
             if cfg.use_pcnn:
                 # 当句子无法分隔成三段时，无法使用PCNN
                 # 比如： [head, ... tail] or [... head, tail, ...] 无法使用统一方式 mask 分段
-                d['entities_pos'] = [1] * (entities_idx[0] + 1) + [2] * (entities_idx[1] - entities_idx[0] - 1) +\
+                d['entities_pos'] = [1] * (entities_idx[0] + 1) + [2] * (entities_idx[1] - entities_idx[0] - 1) + \
                                     [3] * (d['seq_len'] - entities_idx[1])
 
 
@@ -48,9 +49,14 @@ def _convert_tokens_into_index(data: List[Dict], vocab):
 
 
 def _serialize_sentence(data: List[Dict], serial, cfg):
-    for d in data:
+    for d in tqdm(data):
         sent = d['sentence'].strip()
-        sent = sent.replace(d['head'], ' head ', 1).replace(d['tail'], ' tail ', 1)
+
+        if len(d['head']) > len(d['tail']):
+            sent = sent.replace(d['head'], ' head ', 1).replace(d['tail'], ' tail ', 1)
+        else:
+            sent = sent.replace(d['tail'], ' tail ', 1).replace(d['head'], ' head ', 1)
+
         d['tokens'] = serial(sent, never_split=['head', 'tail'])
         head_idx, tail_idx = d['tokens'].index('head'), d['tokens'].index('tail')
         d['head_idx'], d['tail_idx'] = head_idx, tail_idx
@@ -99,7 +105,6 @@ def _handle_relation_data(relation_data: List[Dict]) -> Dict:
 
 
 def preprocess(cfg):
-
     logger.info('===== start preprocess data =====')
     train_fp = os.path.join(cfg.cwd, cfg.data_path, 'train.csv')
     valid_fp = os.path.join(cfg.cwd, cfg.data_path, 'valid.csv')
