@@ -1,4 +1,5 @@
 import os
+import time
 import hydra
 import torch
 import logging
@@ -141,6 +142,8 @@ def main(cfg):
     logger.info('=====start test performance====')
     validate(-1, model, test_dataloader, criterion, device, cfg)
     logger.info('=====ending====')
+
+    plt.savefig(cfg.cwd + '/' + time.strftime('%Y-%m-%d_%H-%M-%S') + '.png')
 
 
 if __name__ == '__main__':
