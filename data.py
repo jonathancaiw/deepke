@@ -219,7 +219,10 @@ def generate_complex_labels(dataset, filename):
             label['agent'] = agent
         if vendor is not None and len(vendor) >= ORG_MIN_LEN:
             label['vendor'] = vendor
-        labels.append(label)
+
+        if len(label) > 0:
+            label['text'] = text
+            labels.append(label)
 
     torch.save(labels, labels_filename)
 
