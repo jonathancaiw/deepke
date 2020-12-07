@@ -6,16 +6,18 @@ import torch
 from tqdm import tqdm
 from global_util import *
 
+random.seed(1)
+
 DATA_PATH = './data/'
 USER_CACHE = True
 MODEL_FILE_SUFFIX = '.pt'
 CONTENT = 'text'
-MIN_LEN = 1
-MAX_LEN = 1000
+CONTENT_MIN_LEN = 1
+CONTENT_MAX_LEN = 1000
+ORG_MIN_LEN = 2
 TRAIN_SIZE = 9
 TEST_SIZE = 0.05
 DEV_SIZE = 0.05
-random.seed(1)
 
 
 def load_xlsx(filename, pt_filename=None, columns=None):
@@ -42,6 +44,7 @@ def add_label(labels, text, index, head, tail, head_tail, tail_head):
         head = head.strip()
         tail = tail.strip()
 
+        # 跳过名称相同的错误标注
         if head == tail:
             write_log('#%d %s has same value' % (index, head_tail))
             return
@@ -109,7 +112,7 @@ def generate_labels(dataset, filename):
             continue
         else:
             text = text.strip()
-            if len(text) < MIN_LEN or len(text) > MAX_LEN:
+            if len(text) < CONTENT_MIN_LEN or len(text) > CONTENT_MAX_LEN:
                 continue
 
         # 业主-代理、代理-业主
@@ -167,11 +170,78 @@ def generate_label(filename):
     save_csv(test_labels, 'test.csv')
 
 
+def generate_complex_labels(dataset, filename):
+    labels_filename = DATA_PATH + filename + '_complex.pt'
+    if USER_CACHE and os.path.exists(labels_filename):
+        return torch.load(labels_filename)
+
+    text_list = dataset[CONTENT]
+    owner_list = dataset['owner']
+    agent_list = dataset['agent']
+    vendor_list = dataset['vendor']
+    money_list = dataset['money']
+
+    labels = []
+
+    for index in tqdm(range(len(text_list))):
+        text = text_list[index]
+        owner = owner_list[index]
+        agent = agent_list[index]
+        vendor = vendor_list[index]
+        # money = money_list[index]
+
+        if text is None:
+            continue
+        else:
+            text = text.strip()
+            if len(text) < CONTENT_MIN_LEN:
+                continue
+
+        if owner is not None:
+            owner = owner.strip()
+        if agent is not None:
+            agent = agent.strip()
+        if vendor is not None:
+            vendor = vendor.strip()
+
+        # 跳过名称相同的错误标注
+        if owner is not None and owner == agent:
+            continue
+        elif agent is not None and agent == vendor:
+            continue
+        elif vendor is not None and vendor == owner:
+            continue
+
+        label = {}
+        if owner is not None and len(owner) >= ORG_MIN_LEN:
+            label['owner'] = owner
+        if agent is not None and len(agent) >= ORG_MIN_LEN:
+            label['agent'] = agent
+        if vendor is not None and len(vendor) >= ORG_MIN_LEN:
+            label['vendor'] = vendor
+        labels.append(label)
+
+    torch.save(labels, labels_filename)
+
+    return labels
+
+
+def generate_complex_label(filename):
+    pt_filename = 'label'
+    columns = {'信息ID': 'id', '纯文本正文': 'text', '中标商': 'vendor', '中标金额': 'money', '代理机构': 'agent', '业主': 'owner', 'html正文': 'html'}
+
+    dataset = load_xlsx(filename, pt_filename, columns)
+
+    labels = generate_complex_labels(dataset, pt_filename)
+
+
 if __name__ == '__main__':
     start_time = datetime.now()
     write_log('start label generating ...')
 
     filename = '/Users/caiwei/Documents/Document/招标网/事件抽取/阿里标记数据-01捷风.xlsx'
-    generate_label(filename)
+    # generate_label(filename)
+
+    generate_complex_label(filename)
 
     write_log('label generating cost: %s' % (datetime.now() - start_time))
