@@ -157,14 +157,13 @@ def save_csv(labels, filename):
             csv_file.writerow(row)
 
 
-def generate_label(filename):
-    pt_filename = 'label'
-    columns = {'信息ID': 'id', '纯文本正文': 'text', '中标商': 'vendor', '中标金额': 'money', '代理机构': 'agent', '业主': 'owner', 'html正文': 'html'}
-
-    dataset = load_xlsx(filename, pt_filename, columns)
-
+def generate_label(dataset):
     labels = generate_labels(dataset, pt_filename)
 
+    save_datasets(labels)
+
+
+def save_datasets(labels):
     train_labels, dev_labels, test_labels = spllit_labels(labels)
 
     save_csv(train_labels, 'train.csv')
@@ -235,13 +234,10 @@ def generate_complex_labels(dataset, filename):
     return labels
 
 
-def generate_complex_label(filename):
-    pt_filename = 'label'
-    columns = {'信息ID': 'id', '纯文本正文': 'text', '中标商': 'vendor', '中标金额': 'money', '代理机构': 'agent', '业主': 'owner', 'html正文': 'html'}
-
-    dataset = load_xlsx(filename, pt_filename, columns)
-
+def generate_complex_label(dataset):
     labels = generate_complex_labels(dataset, pt_filename)
+
+    save_datasets(labels)
 
 
 if __name__ == '__main__':
@@ -249,8 +245,13 @@ if __name__ == '__main__':
     write_log('start label generating ...')
 
     filename = '/Users/caiwei/Documents/Document/招标网/事件抽取/阿里标记数据-01捷风.xlsx'
-    generate_label(filename)
+    pt_filename = 'label'
+    columns = {'信息ID': 'id', '纯文本正文': 'text', '中标商': 'vendor', '中标金额': 'money', '代理机构': 'agent', '业主': 'owner', 'html正文': 'html'}
 
-    # generate_complex_label(filename)
+    dataset = load_xlsx(filename, pt_filename, columns)
+
+    generate_label(dataset)
+
+    # generate_complex_label(dataset)
 
     write_log('label generating cost: %s' % (datetime.now() - start_time))
