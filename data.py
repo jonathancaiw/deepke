@@ -239,18 +239,21 @@ def get_relations(dataset, filename):
 def generate_complex_label(dataset, pt_filename):
     relations = get_relations(dataset, pt_filename)
 
-    labels = []
+    train_relations, dev_relations, test_relations = spllit_labels(relations)
 
-    for index in range(len(relations)):
-        relation = relations[index]
-        add_instance(labels, relation, 'owner', 'agent', '业主-代理', '代理-业主')
-        add_instance(labels, relation, 'owner', 'vendor', '业主-供应商', '供应商-业主')
-        add_instance(labels, relation, 'agent', 'vendor', '代理-供应商', '供应商-代理')
+    for key, value in {'train.csv': train_relations, 'valid.csv': dev_relations, 'test.csv': test_relations}.items():
+        labels = []
 
-    save_datasets(labels)
+        for index in range(len(value)):
+            relation = value[index]
+            add_complex_label(labels, relation, 'owner', 'agent', '业主-代理', '代理-业主')
+            add_complex_label(labels, relation, 'owner', 'vendor', '业主-供应商', '供应商-业主')
+            add_complex_label(labels, relation, 'agent', 'vendor', '代理-供应商', '供应商-代理')
+
+        save_csv(labels, key)
 
 
-def add_instance(labels, relation, head, tail, head_tail, tail_head):
+def add_complex_label(labels, relation, head, tail, head_tail, tail_head):
     if head not in relation or tail not in relation:
         return
 
