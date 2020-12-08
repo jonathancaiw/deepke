@@ -225,7 +225,8 @@ def generate_complex_labels(dataset, filename):
         if vendor is not None and len(vendor) >= ORG_MIN_LEN:
             label['vendor'] = vendor
 
-        if len(label) > 0:
+        # 小于两个实体无法构造关系三元组
+        if len(label) > 1:
             label['text'] = text
             labels.append(label)
 
