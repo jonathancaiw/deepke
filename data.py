@@ -2,6 +2,7 @@ import csv
 from datetime import datetime
 import os
 import random
+import shutil
 import torch
 from tqdm import tqdm
 from global_util import *
@@ -171,7 +172,8 @@ def generate_label(filename):
     save_csv(test_labels, 'test.csv')
 
     # 生成数据集后删除删除数据集缓存
-    os.removedirs(CACHE_PATH)
+    if os.path.exists(CACHE_PATH):
+        shutil.rmtree(CACHE_PATH)
 
 
 def generate_complex_labels(dataset, filename):
