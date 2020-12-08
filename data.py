@@ -46,6 +46,9 @@ def add_label(labels, text, index, head, tail, head_tail, tail_head):
         head = head.strip()
         tail = tail.strip()
 
+        if len(head) < ORG_MIN_LEN or len(tail) < ORG_MIN_LEN:
+            return
+
         # 跳过名称相同的错误标注
         if head == tail:
             write_log('#%d %s has same value' % (index, head_tail))
@@ -84,8 +87,6 @@ def add_label(labels, text, index, head, tail, head_tail, tail_head):
             label['tail'] = head
             label['tail_offset'] = head_offset
             labels.append(label)
-        else:
-            write_log('#%d %s has multiple values' % (index, head_tail))
     else:
         write_log('#%d %s has None value' % (index, head_tail))
 
