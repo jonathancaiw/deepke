@@ -45,7 +45,7 @@ def main(cfg):
     logger.info(f'device: {device}')
 
     # 如果不修改预处理的过程，这一步最好注释掉，不用每次运行都预处理数据一次
-    if not cfg.use_cache and cfg.preprocess:
+    if cfg.preprocess and not os.path.exists(os.path.join(cfg.cwd, cfg.out_path)):
         preprocess(cfg)
 
     train_data_path = os.path.join(cfg.cwd, cfg.out_path, 'train.pkl')

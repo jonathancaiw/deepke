@@ -9,6 +9,7 @@ from global_util import *
 random.seed(1)
 
 DATA_PATH = './data/origin/'
+CACHE_PATH = './data/out/'
 USER_CACHE = True
 MODEL_FILE_SUFFIX = '.pt'
 CONTENT = 'text'
@@ -168,6 +169,9 @@ def generate_label(filename):
     save_csv(train_labels, 'train.csv')
     save_csv(dev_labels, 'valid.csv')
     save_csv(test_labels, 'test.csv')
+
+    # 生成数据集后删除删除数据集缓存
+    os.removedirs(CACHE_PATH)
 
 
 def generate_complex_labels(dataset, filename):
