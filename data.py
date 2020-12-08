@@ -22,7 +22,7 @@ TEST_SIZE = 0.05
 DEV_SIZE = 0.05
 
 
-def load_xlsx(filename, pt_filename=None, columns=None):
+def load_xlsx(xlsx_filename, pt_filename=None, columns=None):
     """
     加载原始数据并缓存
     """
@@ -31,7 +31,7 @@ def load_xlsx(filename, pt_filename=None, columns=None):
     if USER_CACHE and os.path.exists(pt_filename):
         dataset = torch.load(pt_filename)
     else:
-        dataset = get_dict_from_xlsx(filename, columns)
+        dataset = get_dict_from_xlsx(xlsx_filename, columns)
         torch.save(dataset, pt_filename)
 
     return dataset
@@ -157,7 +157,7 @@ def save_csv(labels, filename):
             csv_file.writerow(row)
 
 
-def generate_label(dataset):
+def generate_label(dataset, pt_filename):
     labels = generate_labels(dataset, pt_filename)
 
     save_datasets(labels)
@@ -234,7 +234,7 @@ def generate_complex_labels(dataset, filename):
     return labels
 
 
-def generate_complex_label(dataset):
+def generate_complex_label(dataset, pt_filename):
     labels = generate_complex_labels(dataset, pt_filename)
 
     save_datasets(labels)
@@ -244,14 +244,13 @@ if __name__ == '__main__':
     start_time = datetime.now()
     write_log('start label generating ...')
 
-    filename = '/Users/caiwei/Documents/Document/招标网/事件抽取/阿里标记数据-01捷风.xlsx'
+    xlsx_filename = '/Users/caiwei/Documents/Document/招标网/事件抽取/阿里标记数据-01捷风.xlsx'
     pt_filename = 'label'
     columns = {'信息ID': 'id', '纯文本正文': 'text', '中标商': 'vendor', '中标金额': 'money', '代理机构': 'agent', '业主': 'owner', 'html正文': 'html'}
 
-    dataset = load_xlsx(filename, pt_filename, columns)
+    dataset = load_xlsx(xlsx_filename, pt_filename, columns)
 
-    generate_label(dataset)
-
-    # generate_complex_label(dataset)
+    # generate_label(dataset, pt_filename)
+    generate_complex_label(dataset, pt_filename)
 
     write_log('label generating cost: %s' % (datetime.now() - start_time))
