@@ -176,8 +176,8 @@ def save_datasets(labels):
         shutil.rmtree(CACHE_PATH)
 
 
-def generate_complex_labels(dataset, filename):
-    labels_filename = DATA_PATH + filename + '_complex.pt'
+def get_relations(dataset, filename):
+    labels_filename = DATA_PATH + filename + '_relation.pt'
     if USER_CACHE and os.path.exists(labels_filename):
         return torch.load(labels_filename)
 
@@ -187,7 +187,7 @@ def generate_complex_labels(dataset, filename):
     vendor_list = dataset['vendor']
     money_list = dataset['money']
 
-    labels = []
+    relations = []
 
     for index in tqdm(range(len(text_list))):
         text = text_list[index]
@@ -218,28 +218,101 @@ def generate_complex_labels(dataset, filename):
         elif vendor is not None and vendor == owner:
             continue
 
-        label = {}
+        relation = {}
         if owner is not None and len(owner) >= ORG_MIN_LEN:
-            label['owner'] = owner
+            relation['owner'] = owner
         if agent is not None and len(agent) >= ORG_MIN_LEN:
-            label['agent'] = agent
+            relation['agent'] = agent
         if vendor is not None and len(vendor) >= ORG_MIN_LEN:
-            label['vendor'] = vendor
+            relation['vendor'] = vendor
 
         # 小于两个实体无法构造关系三元组
-        if len(label) > 1:
-            label['text'] = text
-            labels.append(label)
+        if len(relation) > 1:
+            relation['text'] = text
+            relations.append(relation)
 
-    torch.save(labels, labels_filename)
+    torch.save(relations, labels_filename)
 
-    return labels
+    return relations
 
 
 def generate_complex_label(dataset, pt_filename):
-    labels = generate_complex_labels(dataset, pt_filename)
+    relations = get_relations(dataset, pt_filename)
+
+    labels = []
+
+    for index in range(len(relations)):
+        relation = relations[index]
+        add_instance(labels, relation, 'owner', 'agent', '业主-代理', '代理-业主')
+        add_instance(labels, relation, 'owner', 'vendor', '业主-供应商', '供应商-业主')
+        add_instance(labels, relation, 'agent', 'vendor', '代理-供应商', '供应商-代理')
 
     save_datasets(labels)
+
+
+def add_instance(labels, relation, head, tail, head_tail, tail_head):
+    if head not in relation or tail not in relation:
+        return
+
+    text = relation['text']
+    head_entity = relation[head]
+    tail_entity = relation[tail]
+
+    # 内容长的做为head
+    if len(head_entity) < len(tail_entity):
+        temp = head_entity
+        head_entity = tail_entity
+        tail_entity = temp
+
+        temp = head_tail
+        head_tail = tail_head
+        tail_head = temp
+
+    head_pos = get_pos(text, head_entity)
+    tail_pos = get_pos(text, tail_entity)
+
+    for head_index in head_pos:
+        for tail_index in tail_pos:
+            # tail是head子串
+            if tail_index in head_pos:
+                continue
+            else:
+                label = {}
+                label['sentence'] = text
+                label['head'] = head_entity
+                label['tail'] = tail_entity
+                label['head_type'] = '组织机构'
+                label['tail_type'] = '组织机构'
+                label['head_offset'] = str(head_index)
+                label['tail_offset'] = str(tail_index)
+                label['relation'] = head_tail
+                labels.append(label)
+
+                reversed_label = {}
+                reversed_label['sentence'] = text
+                reversed_label['head'] = tail_entity
+                reversed_label['tail'] = head_entity
+                reversed_label['head_type'] = '组织机构'
+                reversed_label['tail_type'] = '组织机构'
+                reversed_label['head_offset'] = str(tail_index)
+                reversed_label['tail_offset'] = str(head_index)
+                reversed_label['relation'] = tail_head
+                labels.append(reversed_label)
+
+
+def get_pos(text, entity):
+    entity_pos = []
+
+    pos = 0
+    while True:
+        index = text.find(entity, pos)
+        if index > -1:
+            entity_pos.append(index)
+            pos = index + len(entity)
+        else:
+            break
+
+    return entity_pos
 
 
 if __name__ == '__main__':
