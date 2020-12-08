@@ -8,14 +8,14 @@ from global_util import *
 
 random.seed(1)
 
-DATA_PATH = './data/'
+DATA_PATH = './data/origin/'
 USER_CACHE = True
 MODEL_FILE_SUFFIX = '.pt'
 CONTENT = 'text'
 CONTENT_MIN_LEN = 1
 CONTENT_MAX_LEN = 1000
 ORG_MIN_LEN = 2
-TRAIN_SIZE = 9
+TRAIN_SIZE = 0.9
 TEST_SIZE = 0.05
 DEV_SIZE = 0.05
 
@@ -243,8 +243,8 @@ if __name__ == '__main__':
     write_log('start label generating ...')
 
     filename = '/Users/caiwei/Documents/Document/招标网/事件抽取/阿里标记数据-01捷风.xlsx'
-    # generate_label(filename)
+    generate_label(filename)
 
-    generate_complex_label(filename)
+    # generate_complex_label(filename)
 
     write_log('label generating cost: %s' % (datetime.now() - start_time))
