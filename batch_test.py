@@ -1,6 +1,7 @@
+import logging
 import os
 import torch
-import logging
+from tqdm import tqdm
 import hydra
 import models
 from hydra import utils
@@ -36,7 +37,7 @@ def _preprocess_data(data, cfg, filename):
     return data, rels, vocab.count
 
 
-def add_instance(instances, index, label, head, tail, head_tail, tail_head):
+def add_instance(instances, label, head, tail, head_tail, tail_head):
     if head not in label or tail not in label:
         return
 
@@ -44,7 +45,11 @@ def add_instance(instances, index, label, head, tail, head_tail, tail_head):
     head_entity = label[head]
     tail_entity = label[tail]
 
-    # 内容长的作为head
+    # 使用只有两个实体的数据
+    if text.count(head_entity) > 1 or text.count(tail_entity) > 1:
+        return
+
+    # 内容长的做为head
     if len(head_entity) < len(tail_entity):
         temp = head_entity
         head_entity = tail_entity
@@ -101,25 +106,25 @@ def get_pos(text, entity):
 
 
 def _get_predict_instances(cfg):
-    labels = torch.load(cfg.cwd + '/data/label_complex.pt')
+    labels = torch.load(os.path.join(cfg.cwd, cfg.data_path, 'label_relation.pt'))
     instances = []
 
-    filename = cfg.cwd + '/data/instances.pt'
+    filename = os.path.join(cfg.cwd, cfg.data_path, 'instances.pt')
     if os.path.exists(filename):
         instances = torch.load(filename)
     else:
-        for index in range(len(labels)):
+        for index in tqdm(range(len(labels))):
             label = labels[index]
-            add_instance(instances, index, label, 'owner', 'agent', '业主-代理', '代理-业主')
-            add_instance(instances, index, label, 'owner', 'vendor', '业主-供应商', '供应商-业主')
-            add_instance(instances, index, label, 'agent', 'vendor', '代理-供应商', '供应商-代理')
+            add_instance(instances, label, 'owner', 'agent', '业主-代理', '代理-业主')
+            add_instance(instances, label, 'owner', 'vendor', '业主-供应商', '供应商-业主')
+            add_instance(instances, label, 'agent', 'vendor', '代理-供应商', '供应商-代理')
         torch.save(instances, filename)
 
     return instances
 
 
 # 自定义模型存储的路径
-fp = '/Users/caiwei/Documents/PycharmProjects/relation_extraction/checkpoints/2020-12-04_10-03-23/cnn_epoch10_d100.pth'
+fp = '/Users/caiwei/Documents/PycharmProjects/relation_extraction/checkpoints/2020-12-04_10-03-23/cnn_epoch10_t0.9_l512.pth'
 
 
 @hydra.main(config_path='conf/config.yaml')
@@ -131,7 +136,7 @@ def main(cfg):
 
     # get predict instance
     instances = _get_predict_instances(cfg)
-    data = instances[:1000]
+    data = instances[:10000]
 
     # preprocess data
     filename = cfg.cwd + '/data/data.pt'
@@ -169,7 +174,7 @@ def main(cfg):
     with torch.no_grad():
         match = 0
 
-        for sample in data:
+        for sample in tqdm(data):
             x = dict()
             x['word'], x['lens'] = torch.tensor([sample['token2idx']]), torch.tensor([sample['seq_len']])
             if cfg.model_name != 'lm':
@@ -188,7 +193,8 @@ def main(cfg):
             if sample['relation'] == prob_rel:
                 match += 1
             else:
-                logger.info(f"\"{sample['head']}\" 和 \"{sample['tail']}\" 在句中关系为：\"{prob_rel}\"，置信度为{prob:.2f}，标签值为{sample['relation']}。")
+                if prob > 0.9:
+                    logger.info(f"\"{sample['head']}\" 和 \"{sample['tail']}\" 在句中关系为：\"{prob_rel}\"，置信度为{prob:.2f}，标签值为{sample['relation']}。")
 
         logger.info('acc %.4f' % (match / len(data)))
 
