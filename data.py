@@ -252,6 +252,10 @@ def generate_complex_label(dataset, pt_filename):
 
         save_csv(labels, key)
 
+    # 生成数据集后删除删除数据集缓存
+    if os.path.exists(CACHE_PATH):
+        shutil.rmtree(CACHE_PATH)
+
 
 def add_complex_label(labels, relation, head, tail, head_tail, tail_head):
     if head not in relation or tail not in relation:
