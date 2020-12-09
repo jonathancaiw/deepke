@@ -193,7 +193,7 @@ def get_relations(dataset, filename):
     owner_list = dataset['owner']
     agent_list = dataset['agent']
     vendor_list = dataset['vendor']
-    money_list = dataset['money']
+    # money_list = dataset['money']
 
     relations = []
 
@@ -340,7 +340,7 @@ if __name__ == '__main__':
 
     dataset = load_xlsx(xlsx_filename, pt_filename, columns)
 
-    generate_label(dataset, pt_filename)
-    # generate_complex_label(dataset, pt_filename)
+    # generate_label(dataset, pt_filename)
+    generate_complex_label(dataset, pt_filename)
 
     write_log('label generating cost: %s' % (datetime.now() - start_time))
