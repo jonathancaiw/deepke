@@ -70,6 +70,14 @@ def add_label(labels, text, index, head, tail, head_tail, tail_head):
             head_offset = text.find(head)
             tail_offset = text.find(tail)
 
+            # 处理一个实体是另一个实体子串的情况
+            if head_offset == tail_offset:
+                second_tail_offset = text.find(tail, tail_offset + 1)
+                if second_tail_offset > -1:
+                    tail_offset = second_tail_offset
+                else:
+                    head_offset = text.find(head, head_offset + 1)
+
             label = {}
             label['sentence'] = text
             label['relation'] = head_tail
@@ -100,7 +108,7 @@ def generate_labels(dataset, filename):
     owner_list = dataset['owner']
     agent_list = dataset['agent']
     vendor_list = dataset['vendor']
-    money_list = dataset['money']
+    # money_list = dataset['money']
 
     labels = []
 
@@ -150,7 +158,7 @@ def spllit_labels(labels):
 def save_csv(labels, filename):
     columns = ['sentence', 'relation', 'head', 'head_offset', 'tail', 'tail_offset']
 
-    with open(DATA_PATH + filename, 'w') as file:
+    with open(DATA_PATH + filename, 'w', encoding='UTF-8') as file:
         csv_file = csv.writer(file)
         csv_file.writerow(columns)
         for label in labels:
@@ -171,7 +179,7 @@ def save_datasets(labels):
     save_csv(dev_labels, 'valid.csv')
     save_csv(test_labels, 'test.csv')
 
-    # 生成数据集后删除删除数据集缓存
+    # 生成数据集后删除数据集缓存
     if os.path.exists(CACHE_PATH):
         shutil.rmtree(CACHE_PATH)
 
@@ -252,7 +260,7 @@ def generate_complex_label(dataset, pt_filename):
 
         save_csv(labels, key)
 
-    # 生成数据集后删除删除数据集缓存
+    # 生成数据集后删除数据集缓存
     if os.path.exists(CACHE_PATH):
         shutil.rmtree(CACHE_PATH)
 
@@ -332,7 +340,7 @@ if __name__ == '__main__':
 
     dataset = load_xlsx(xlsx_filename, pt_filename, columns)
 
-    # generate_label(dataset, pt_filename)
-    generate_complex_label(dataset, pt_filename)
+    generate_label(dataset, pt_filename)
+    # generate_complex_label(dataset, pt_filename)
 
     write_log('label generating cost: %s' % (datetime.now() - start_time))
