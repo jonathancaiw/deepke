@@ -136,7 +136,7 @@ def main(cfg):
 
     # get predict instance
     instances = _get_predict_instances(cfg)
-    data = instances[:10000]
+    data = instances
 
     # preprocess data
     filename = cfg.cwd + '/data/data.pt'
@@ -196,7 +196,7 @@ def main(cfg):
                 if prob > 0.9:
                     logger.info(f"\"{sample['head']}\" 和 \"{sample['tail']}\" 在句中关系为：\"{prob_rel}\"，置信度为{prob:.2f}，标签值为{sample['relation']}。")
 
-        logger.info('acc %.4f' % (match / len(data)))
+        logger.info('match %d / total %d / acc %.4f' % (match, len(data), match / len(data)))
 
     if cfg.predict_plot:
         # maplot 默认显示不支持中文
