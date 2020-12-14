@@ -23,4 +23,4 @@ min_freq: 3
 # 句长限制: 指句子中词语相对entity的position限制
 # 如：[-30, 30]，embed 时整体+31，变成[1, 61]
 # 则一共62个pos token，0 留给 pad
-pos_limit: 30
+pos_limit: 256

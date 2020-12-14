@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 import torch
 from tqdm import tqdm
 import hydra
@@ -13,7 +14,7 @@ import matplotlib.pyplot as plt
 logger = logging.getLogger(__name__)
 
 
-def _preprocess_data(data, cfg, filename):
+def _preprocess_data(data, cfg):
     vocab = load_pkl(os.path.join(cfg.cwd, cfg.out_path, 'vocab.pkl'), verbose=False)
     relation_data = load_csv(os.path.join(cfg.cwd, cfg.data_path, 'relation.csv'), verbose=False)
     rels = _handle_relation_data(relation_data)
@@ -32,9 +33,7 @@ def _preprocess_data(data, cfg, filename):
                        cfg.replace_entity_with_scope, data[0]['tokens'], data[0]['token2idx'], data[0]['seq_len'],
                        data[0]['head_idx'], data[0]['tail_idx']))
 
-    torch.save((data, rels, cfg.vocab_size), filename)
-
-    return data, rels, vocab.count
+    return data, rels
 
 
 def add_instance(instances, label, head, tail, head_tail, tail_head):
@@ -44,10 +43,6 @@ def add_instance(instances, label, head, tail, head_tail, tail_head):
     text = label['text']
     head_entity = label[head]
     tail_entity = label[tail]
-
-    # 使用只有两个实体的数据
-    if text.count(head_entity) > 1 or text.count(tail_entity) > 1:
-        return
 
     # 内容长的做为head
     if len(head_entity) < len(tail_entity):
@@ -109,22 +104,17 @@ def _get_predict_instances(cfg):
     labels = torch.load(os.path.join(cfg.cwd, cfg.data_path, 'label_relation.pt'))
     instances = []
 
-    filename = os.path.join(cfg.cwd, cfg.data_path, 'instances.pt')
-    if os.path.exists(filename):
-        instances = torch.load(filename)
-    else:
-        for index in tqdm(range(len(labels))):
-            label = labels[index]
-            add_instance(instances, label, 'owner', 'agent', '业主-代理', '代理-业主')
-            add_instance(instances, label, 'owner', 'vendor', '业主-供应商', '供应商-业主')
-            add_instance(instances, label, 'agent', 'vendor', '代理-供应商', '供应商-代理')
-        torch.save(instances, filename)
+    for index in tqdm(range(len(labels))):
+        label = labels[index]
+        add_instance(instances, label, 'owner', 'agent', '业主-代理', '代理-业主')
+        add_instance(instances, label, 'owner', 'vendor', '业主-供应商', '供应商-业主')
+        add_instance(instances, label, 'agent', 'vendor', '代理-供应商', '供应商-代理')
 
     return instances
 
 
 # 自定义模型存储的路径
-fp = '/Users/caiwei/Documents/PycharmProjects/relation_extraction/checkpoints/2020-12-04_10-03-23/cnn_epoch10_t0.9_l512.pth'
+fp = '/Users/caiwei/Documents/PycharmProjects/relation_extraction/checkpoints/cnn_complex_epoch10_t0.9_l256.pth'
 
 
 @hydra.main(config_path='conf/config.yaml')
@@ -136,15 +126,11 @@ def main(cfg):
 
     # get predict instance
     instances = _get_predict_instances(cfg)
-    data = instances
+    random.shuffle(instances)
+    data = instances[:1000]
 
     # preprocess data
-    filename = cfg.cwd + '/data/data.pt'
-    if os.path.exists(filename):
-        data, rels, vocab_size = torch.load(filename)
-        cfg.vocab_size = vocab_size
-    else:
-        data, rels, _ = _preprocess_data(data, cfg, filename)
+    data, rels = _preprocess_data(data, cfg)
 
     # model
     __Model__ = {
