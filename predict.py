@@ -38,11 +38,11 @@ def _get_predict_instance(cfg):
     flag = input('是否使用范例[y/n]，退出请输入: exit .... ')
     flag = flag.strip().lower()
     if flag == 'y' or flag == 'yes':
-        sentence = '《乡村爱情》是一部由知名导演赵本山在1985年所拍摄的农村青春偶像剧。'
-        head = '乡村爱情'
-        tail = '赵本山'
-        head_type = '电视剧'
-        tail_type = '人物'
+        sentence = '国义招标受到中国移动的委托，组织基站公开采购的招标工作。'
+        head = '国义招标'
+        tail = '中国移动'
+        head_type = '组织机构'
+        tail_type = '组织机构'
     elif flag == 'n' or flag == 'no':
         sentence = input('请输入句子：')
         head = input('请输入句中需要预测关系的头实体：')
@@ -71,7 +71,7 @@ def _get_predict_instance(cfg):
 
 
 # 自定义模型存储的路径
-fp = 'xxx/checkpoints/2019-12-03_17-35-30/cnn_epoch21.pth'
+fp = '../../checkpoints/cnn_complex_epoch10_t0.9_l256.pth'
 
 
 @hydra.main(config_path='conf/config.yaml')
