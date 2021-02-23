@@ -15,7 +15,7 @@ USER_CACHE = True
 MODEL_FILE_SUFFIX = '.pt'
 CONTENT = 'text'
 CONTENT_MIN_LEN = 1
-CONTENT_MAX_LEN = 1000
+CONTENT_MAX_LEN = 2 ** 12
 ORG_MIN_LEN = 2
 TRAIN_SIZE = 0.9
 TEST_SIZE = 0.05
@@ -39,6 +39,7 @@ def load_xlsx(xlsx_filename, pt_filename=None, columns=None):
 
 def is_not_none(a, b):
     return a is not None and b is not None
+
 
 @DeprecationWarning
 def add_label(labels, text, index, head, tail, head_tail, tail_head):
@@ -97,6 +98,7 @@ def add_label(labels, text, index, head, tail, head_tail, tail_head):
             labels.append(label)
     else:
         write_log('#%d %s has None value' % (index, head_tail))
+
 
 @DeprecationWarning
 def generate_labels(dataset, filename):
@@ -205,7 +207,7 @@ def get_relations(dataset, filename):
         vendor = vendor_list[index]
         # money = money_list[index]
 
-        if text is None:
+        if text is None or len(text) > CONTENT_MAX_LEN:
             continue
         else:
             text = text.strip()
