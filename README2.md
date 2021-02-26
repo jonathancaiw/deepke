@@ -4,7 +4,7 @@
 
 # 2.训练
 
-1、执行main.py，训练结束后生成checkpoints/xxx.pth权重文件;
+1、执行main.py，训练结束后生成checkpoints/*/xxx.pth权重文件;
 
 # 3.预测
 
