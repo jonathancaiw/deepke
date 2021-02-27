@@ -337,7 +337,7 @@ if __name__ == '__main__':
     start_time = datetime.now()
     write_log('start label generating ...')
 
-    xlsx_filename = '/Users/caiwei/Documents/Document/招标网/实体识别/阿里标记数据-01捷风.xlsx'
+    xlsx_filename = '/Users/caiwei/Documents/PycharmProjects/nlp_util/nlp/file/dataset/raw/阿里标记数据-01捷风.xlsx'
     pt_filename = 'label'
     columns = {'信息ID': 'id', '纯文本正文': 'text', '中标商': 'vendor', '中标金额': 'money', '代理机构': 'agent', '业主': 'owner', 'html正文': 'html'}
 
